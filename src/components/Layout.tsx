@@ -1,20 +1,46 @@
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useNavigate } from "react-router";
+import { useAuth } from "../context/authContext";
 
 export default function Layout() {
-    return (
-        <div className="app">
-            <header className="header">
-                <span className="logo">Flashio</span>
-                <nav>
-                    <NavLink to="/" end>
-                        Головна
-                    </NavLink>
-                    <NavLink to="/sets">Мої сети</NavLink>
-                </nav>
-            </header>
-            <main className="content">
-                <Outlet />
-            </main>
-        </div>
-    )
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate("/");
+  }
+
+  return (
+    <div className="app">
+      <header className="header">
+        <span className="logo">Flashio</span>
+        <nav>
+          <NavLink to="/" end>
+            Головна
+          </NavLink>
+
+          {user ? (
+            <>
+              <NavLink to="/sets">Мої сети</NavLink>
+              <span className="user-name">
+                {profile?.username}
+                {profile?.role === "teacher" && " (викладач)"}
+              </span>
+              <button className="link-button" onClick={handleSignOut}>
+                Вийти
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login">Вхід</NavLink>
+              <NavLink to="/register">Реєстрація</NavLink>
+            </>
+          )}
+        </nav>
+      </header>
+      <main className="content">
+        <Outlet />
+      </main>
+    </div>
+  );
 }
