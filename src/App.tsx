@@ -5,7 +5,12 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import MySetsPage from "./pages/MySetsPage";
+import CreateSetPage from "./pages/CreateSetPage";
+import SetPage from "./pages/SetPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import EditSetPage from "./pages/EditSetPage";
+import StudyPage from "./pages/StudyPage";
+import QuizPage from "./pages/QuizPage";
 
 export default function App() {
   return (
@@ -18,6 +23,12 @@ export default function App() {
         {/* Сторінки лише для тих, хто увійшов */}
         <Route element={<ProtectedRoute />}>
           <Route path="sets" element={<MySetsPage />} />
+          <Route path="sets/new" element={<CreateSetPage />} />
+          <Route path="sets/:id" element={<SetPage />} />
+          <Route path="sets/:id" element={<SetPage />} />
+          <Route path="sets/:id/edit" element={<EditSetPage />} />
+          <Route path="sets/:id/study" element={<StudyPage />} />
+          <Route path="sets/:id/quiz" element={<QuizPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

@@ -139,3 +139,614 @@ body {
   color: #d70015;
   margin: 0;
 }
+/* ---------- Загальні елементи ---------- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  margin: 0 0 4px;
+}
+
+.muted {
+  color: #6e6e73;
+  margin: 0;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+}
+
+.primary-button {
+  background: #4255ff;
+  color: #ffffff;
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: #4255ff;
+  border: 1px solid #d2d2d7;
+}
+
+.danger-button {
+  background: #ffffff;
+  color: #d70015;
+  border: 1px solid #f2c4c9;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #4255ff;
+  text-decoration: none;
+}
+
+.notice {
+  padding: 12px 16px;
+  background: #eef0ff;
+  border-radius: 10px;
+  color: #3a3a8c;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  background: #ffffff;
+}
+
+.input:focus {
+  outline: 2px solid #4255ff;
+  border-color: transparent;
+}
+
+/* ---------- Список сетів ---------- */
+
+.sets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.set-tile {
+  display: block;
+  padding: 20px;
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  color: inherit;
+  text-decoration: none;
+}
+
+.set-tile:hover {
+  border-color: #4255ff;
+}
+
+.set-tile h3 {
+  margin: 0 0 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: #ffffff;
+  border-radius: 16px;
+}
+
+/* ---------- Створення сету ---------- */
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.choice-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px;
+  background: #ffffff;
+  border: 2px solid #e5e5ea;
+  border-radius: 16px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choice-card:hover:not(:disabled) {
+  border-color: #4255ff;
+}
+
+.choice-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.choice-icon {
+  font-size: 28px;
+}
+
+.set-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.set-form h2 {
+  margin: 8px 0 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.cards-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 40px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.card-number {
+  color: #6e6e73;
+  font-weight: 600;
+  text-align: center;
+}
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #f2f2f7;
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ---------- Перегляд сету ---------- */
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.card-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.card-item .term {
+  font-weight: 600;
+}
+
+/* ---------- Мобільна версія ---------- */
+
+@media (max-width: 600px) {
+  .card-row {
+    grid-template-columns: 1fr;
+  }
+
+  .card-number {
+    display: none;
+  }
+}
+/* ---------- Сторінка сету ---------- */
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.study-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.mode-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  color: inherit;
+  text-decoration: none;
+}
+
+.mode-tile:hover {
+  border-color: #4255ff;
+}
+
+.mode-tile.disabled {
+  opacity: 0.55;
+}
+
+.mode-tile.disabled:hover {
+  border-color: transparent;
+}
+
+/* ---------- Режим «Картки» ---------- */
+
+.study {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.study-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.study-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.progress {
+  height: 6px;
+  background: #e5e5ea;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #4255ff;
+  transition: width 0.3s;
+}
+
+.flashcard {
+  height: 320px;
+  perspective: 1000px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  backface-visibility: hidden;
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard-hint {
+  position: absolute;
+  bottom: 16px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #6e6e73;
+}
+
+.study-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.known-button,
+.learning-button {
+  flex: 1;
+  max-width: 220px;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.known-button {
+  border: 2px solid #34c759;
+  color: #248a3d;
+}
+
+.learning-button {
+  border: 2px solid #ff9f0a;
+  color: #c93400;
+}
+
+.keyboard-hint {
+  text-align: center;
+  font-size: 14px;
+}
+
+.study-finished {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .flashcard {
+    height: 240px;
+  }
+
+  .flashcard-face {
+    font-size: 24px;
+  }
+}
+/* ---------- Режим «Тест» ---------- */
+
+.quiz,
+.quiz-results {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quiz-setup {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quiz-setup h2 {
+  margin: 0;
+}
+
+.quiz-setup .radio-group {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-setup .radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.quiz-card {
+  padding: 40px 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.quiz-label {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #6e6e73;
+}
+
+.quiz-prompt {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 2px solid #e5e5ea;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 17px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: #4255ff;
+}
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
+.option-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #f2f2f7;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6e6e73;
+}
+
+.quiz-option.correct {
+  border-color: #34c759;
+  background: #eafaf0;
+}
+
+.quiz-option.wrong {
+  border-color: #ff3b30;
+  background: #fff0ef;
+}
+
+.quiz-option.dimmed {
+  opacity: 0.5;
+}
+
+.quiz-feedback {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback-correct {
+  margin: 0;
+  color: #248a3d;
+  font-weight: 600;
+}
+
+.feedback-wrong {
+  margin: 0;
+  color: #d70015;
+  font-weight: 600;
+}
+
+.score-card {
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.score-card p {
+  margin: 4px 0;
+}
+
+.score-card .study-actions {
+  margin-top: 20px;
+}
+
+.score-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #4255ff;
+}
+
+.mistakes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mistake-item {
+  padding: 14px 18px;
+  background: #ffffff;
+  border-left: 4px solid #ff3b30;
+  border-radius: 12px;
+}
+
+.mistake-item p {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 600px) {
+  .quiz-options {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-prompt {
+    font-size: 24px;
+  }
+}
