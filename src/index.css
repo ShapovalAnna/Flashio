@@ -750,3 +750,52 @@ body {
     font-size: 24px;
   }
 }
+/* ---------- Генерація ШІ ---------- */
+
+.ai-form {
+  margin-top: 16px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+}
+
+textarea.input {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.example-chip {
+  padding: 6px 12px;
+  background: #eef0ff;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  color: #3a3a8c;
+  cursor: pointer;
+}
+
+.example-chip:hover {
+  background: #dfe3ff;
+}
+
+.ai-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ai-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}

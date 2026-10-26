@@ -3,11 +3,12 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
-import { createEmptyCard } from "../lib/cards";
+import { createEmptyCard, validateCards } from "../lib/cards";
 import CardsEditor from "../components/CardsEditor";
-import type { CardDraft } from "../types";
+import AiGenerateForm from "../components/AiGenerateForm";
+import type { CardDraft, GeneratedSet } from "../types";
 
-type Mode = "choose" | "manual";
+type Mode = "choose" | "manual" | "ai";
 
 export default function CreateSetPage() {
   const { user } = useAuth();
@@ -21,32 +22,38 @@ export default function CreateSetPage() {
     createEmptyCard(),
     createEmptyCard(),
   ]);
+  const [fromAi, setFromAi] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // ШІ повернув чернетку: підставляємо її в редактор для перевірки
+  function handleGenerated(result: GeneratedSet) {
+    setTitle(result.title);
+    setCards(
+      result.cards.map((card) => ({
+        key: crypto.randomUUID(),
+        term: card.term,
+        definition: card.definition,
+      })),
+    );
+    setFromAi(true);
+    setError(null);
+    setMode("manual");
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!user) return;
     setError(null);
 
-    // Беремо лише заповнені картки, прибираємо зайві пробіли
-    const filledCards = cards
-      .map((card) => ({
-        term: card.term.trim(),
-        definition: card.definition.trim(),
-      }))
-      .filter((card) => card.term || card.definition);
-
     if (!title.trim()) {
       setError("Введи назву сету");
       return;
     }
-    if (filledCards.some((card) => !card.term || !card.definition)) {
-      setError("У кожної картки мають бути заповнені обидві сторони");
-      return;
-    }
-    if (filledCards.length < 2) {
-      setError("Додай щонайменше 2 картки");
+
+    const { cards: validCards, error: validationError } = validateCards(cards);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -70,7 +77,7 @@ export default function CreateSetPage() {
     }
 
     const { error: insertCardsError } = await supabase.from("cards").insert(
-      filledCards.map((card, index) => ({
+      validCards.map((card, index) => ({
         set_id: setId,
         term: card.term,
         definition: card.definition,
@@ -89,6 +96,7 @@ export default function CreateSetPage() {
     navigate(`/sets/${setId}`);
   }
 
+  // ---------- Вибір способу ----------
   if (mode === "choose") {
     return (
       <div>
@@ -105,16 +113,42 @@ export default function CreateSetPage() {
             <span className="muted">Самостійно додай слова і переклади</span>
           </button>
 
-          <button className="choice-card" disabled>
+          <button className="choice-card" onClick={() => setMode("ai")}>
             <span className="choice-icon">✨</span>
             <strong>За допомогою ШІ</strong>
-            <span className="muted">Скоро: опиши тему, і ШІ підбере слова</span>
+            <span className="muted">
+              Опиши тему, і ШІ підбере слова з перекладом
+            </span>
           </button>
         </div>
       </div>
     );
   }
 
+  // ---------- Генерація ШІ ----------
+  if (mode === "ai") {
+    return (
+      <div>
+        <button
+          type="button"
+          className="back-link link-button"
+          onClick={() => setMode("choose")}
+        >
+          ← Назад
+        </button>
+        <h1>Новий сет зі ШІ ✨</h1>
+        <p className="muted">
+          Опиши тему, і ШІ створить чернетку: англійське слово з одного боку,
+          український переклад з іншого. Перед збереженням ти зможеш усе
+          перевірити й виправити.
+        </p>
+
+        <AiGenerateForm onGenerated={handleGenerated} />
+      </div>
+    );
+  }
+
+  // ---------- Редактор (вручну або перевірка чернетки ШІ) ----------
   return (
     <div>
       <button
@@ -125,6 +159,22 @@ export default function CreateSetPage() {
         ← Назад
       </button>
       <h1>Новий сет</h1>
+
+      {fromAi && (
+        <div className="notice ai-notice">
+          <span>
+            ✨ ШІ підготував чернетку з {cards.length} слів. Перевір переклади,
+            виправ або видали зайве, а потім збережи сет.
+          </span>
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => setMode("ai")}
+          >
+            Згенерувати ще раз
+          </button>
+        </div>
+      )}
 
       <form className="set-form" onSubmit={handleSubmit}>
         <label className="field">
