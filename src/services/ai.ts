@@ -16,12 +16,23 @@ export async function generateSet(
   });
 
   if (error) {
+    console.error("generateSet error:", error);
+
     let message = "Не вдалося зв'язатися з сервером ШІ";
 
-    // Дістаємо зрозуміле повідомлення, яке повернула наша функція
     if (error instanceof FunctionsHttpError) {
+      const status = error.context.status;
       const body = await error.context.json().catch(() => null);
-      if (body?.error) message = body.error;
+
+      if (status === 546) {
+        // Supabase зупинив функцію через ліміт часу
+        message =
+          "ШІ відповідав занадто довго. Спробуй ще раз або зменш кількість слів.";
+      } else {
+        // Наша функція повертає поле error, а сам Supabase — поле message
+        message =
+          body?.error ?? body?.message ?? `Помилка сервера (код ${status})`;
+      }
     }
 
     throw new Error(message);
