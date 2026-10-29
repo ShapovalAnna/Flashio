@@ -5,6 +5,7 @@ import { useAuth } from "../context/authContext";
 import { cardsCountLabel } from "../lib/cards";
 import { useSetWithCards } from "../hooks/useSetWithCards";
 import SetNotFound from "../components/SetNotFound";
+import SpeakButton from "../components/SpeakButton";
 
 export default function SetPage() {
   const { id } = useParams();
@@ -89,7 +90,10 @@ export default function SetPage() {
       <div className="cards-list">
         {cards.map((card) => (
           <div key={card.id} className="card-item">
-            <span className="term">{card.term}</span>
+            <span className="term">
+              <SpeakButton text={card.term} lang={set.term_lang} />
+              {card.term}
+            </span>
             <span>{card.definition}</span>
           </div>
         ))}

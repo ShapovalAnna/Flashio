@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { useSetWithCards } from "../hooks/useSetWithCards";
 import { buildQuestions, type QuizQuestion } from "../lib/quiz";
 import SetNotFound from "../components/SetNotFound";
+import SpeakButton from "../components/SpeakButton";
 import type { Card, StudySet } from "../types";
 
 export default function QuizPage() {
@@ -244,7 +245,17 @@ function QuizSession({ set, cards }: QuizSessionProps) {
         <p className="quiz-label">
           {reverse ? "Обери слово англійською" : "Обери правильний переклад"}
         </p>
-        <p className="quiz-prompt">{current.prompt}</p>
+        <div className="quiz-prompt-row">
+          <p className="quiz-prompt">{current.prompt}</p>
+          {/* Кнопка озвучення лише тоді, коли показуємо англійське слово */}
+          {!reverse && (
+            <SpeakButton
+              text={current.prompt}
+              lang={set.term_lang}
+              size="large"
+            />
+          )}
+        </div>
       </div>
 
       <div className="quiz-options">
@@ -282,4 +293,3 @@ function QuizSession({ set, cards }: QuizSessionProps) {
     </div>
   );
 }
-

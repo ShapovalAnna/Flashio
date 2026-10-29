@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router";
+import { Link, NavLink, Outlet, useNavigate } from "react-router";
 import { useAuth } from "../context/authContext";
 
 export default function Layout() {
@@ -13,7 +13,9 @@ export default function Layout() {
   return (
     <div className="app">
       <header className="header">
-        <span className="logo">Flashio</span>
+        <Link to="/" className="logo">
+          Flashio
+        </Link>
         <nav>
           <NavLink to="/" end>
             Головна

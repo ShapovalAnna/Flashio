@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { createEmptyCard, validateCards } from "../lib/cards";
@@ -14,7 +14,11 @@ export default function CreateSetPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState<Mode>("choose");
+  // Якщо перейшли за посиланням /sets/new?mode=ai, одразу відкриваємо генерацію ШІ
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<Mode>(
+    searchParams.get("mode") === "ai" ? "ai" : "choose",
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cards, setCards] = useState<CardDraft[]>(() => [

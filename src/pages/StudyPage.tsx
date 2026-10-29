@@ -4,6 +4,8 @@ import { useSetWithCards } from "../hooks/useSetWithCards";
 import { shuffle } from "../lib/cards";
 import SetNotFound from "../components/SetNotFound";
 import type { Card, StudySet } from "../types";
+import SpeakButton from "../components/SpeakButton";
+import { speak } from "../lib/speech";
 
 export default function StudyPage() {
   const { id } = useParams();
@@ -40,6 +42,7 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
   const [knownCount, setKnownCount] = useState(0);
   const [learning, setLearning] = useState<Card[]>([]);
   const [reverse, setReverse] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
 
   const finished = index >= queue.length;
   const current = queue[index];
@@ -86,7 +89,14 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
+  // Англійське слово видно на лицьовій стороні, а в режимі «Спочатку переклад» — на зворотній
+  const termVisible = reverse ? flipped : !flipped;
 
+  // Автоозвучення: вимовляємо слово, щойно воно з'являється
+  useEffect(() => {
+    if (!autoSpeak || finished || !current || !termVisible) return;
+    speak(current.term, set.term_lang);
+  }, [autoSpeak, finished, current, termVisible, set.term_lang]);
   if (finished) {
     return (
       <div className="study-finished">
@@ -138,6 +148,19 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
             />
             Спочатку переклад
           </label>
+
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={autoSpeak}
+              onChange={(e) => {
+                setAutoSpeak(e.target.checked);
+                e.target.blur();
+              }}
+            />
+            Автоозвучення
+          </label>
+
           <button
             className="secondary-button"
             onClick={() => restart(shuffle(cards))}
@@ -163,9 +186,29 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
         <div className="flashcard-inner">
           <div className="flashcard-face">
             {front}
+            {!reverse && (
+              <div className="face-speak">
+                <SpeakButton
+                  text={current.term}
+                  lang={set.term_lang}
+                  size="large"
+                />
+              </div>
+            )}
             <span className="flashcard-hint">Натисни, щоб перевернути</span>
           </div>
-          <div className="flashcard-face flashcard-back">{back}</div>
+          <div className="flashcard-face flashcard-back">
+            {back}
+            {reverse && (
+              <div className="face-speak">
+                <SpeakButton
+                  text={current.term}
+                  lang={set.term_lang}
+                  size="large"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -906,3 +906,225 @@ textarea.input {
     align-items: stretch;
   }
 }
+
+/* ---------- Озвучення ---------- */
+
+.speak-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: #eef0ff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.speak-button:hover {
+  background: #dfe3ff;
+}
+
+.speak-button.small {
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+}
+
+.speak-button.large {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+.card-item .term {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.face-speak {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.quiz-prompt-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+/* ---------- Головна: гості ---------- */
+
+.logo {
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 16px 8px;
+}
+
+.hero h1 {
+  margin: 0 0 16px;
+  font-size: 44px;
+  line-height: 1.15;
+}
+
+.accent {
+  color: #4255ff;
+}
+
+.hero-text {
+  max-width: 620px;
+  margin: 0 auto 28px;
+  font-size: 19px;
+  line-height: 1.5;
+  color: #6e6e73;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primary-button.big,
+.secondary-button.big {
+  padding: 14px 26px;
+  font-size: 17px;
+  border-radius: 12px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.feature {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.feature h3 {
+  margin: 12px 0 6px;
+}
+
+.how-it-works h2 {
+  margin-top: 0;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #4255ff;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.step p {
+  margin: 4px 0 0;
+}
+
+/* ---------- Головна: користувачі ---------- */
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 24px 0 40px;
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px;
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  color: inherit;
+  text-decoration: none;
+}
+
+.quick-action:hover {
+  border-color: #4255ff;
+}
+
+.quick-action-text {
+  color: #6e6e73;
+}
+
+.quick-action.highlight {
+  background: linear-gradient(135deg, #4255ff, #7b5cff);
+  color: #ffffff;
+}
+
+.quick-action.highlight .quick-action-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.quick-action.highlight:hover {
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(66, 85, 255, 0.35);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.section-header a {
+  color: #4255ff;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding-top: 24px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .hero-text {
+    font-size: 17px;
+  }
+}
