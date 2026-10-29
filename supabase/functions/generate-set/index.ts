@@ -1,4 +1,5 @@
-// Серверна функція: генерує сет карток через Gemini API
+// Серверна функція: генерує сет карток за допомогою ШІ.
+// Ланцюжок провайдерів: Gemini → Groq → запасна модель Gemini.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,11 +9,16 @@ const corsHeaders = {
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1']
 
-// Коди помилок, при яких є сенс повторити запит
-const RETRYABLE_STATUSES = [500, 503]
+// Скільки чекати відповіді від кожного провайдера (мс).
+// Сума має бути меншою за ліміт Supabase у 150 секунд.
+const GEMINI_TIMEOUT_MS = 25_000
+const GROQ_TIMEOUT_MS = 30_000
 
-// Скільки чекати відповіді Gemini на одну спробу (мс)
-const ATTEMPT_TIMEOUT_MS = 30_000
+// ---------- Спільний формат результату для всіх провайдерів ----------
+
+type FailReason = 'timeout' | 'overloaded' | 'rate_limit' | 'error'
+
+type AttemptResult = { ok: true; text: string } | { ok: false; reason: FailReason }
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -21,12 +27,24 @@ function json(body: unknown, status = 200) {
   })
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function reasonFromStatus(status: number): FailReason {
+  if (status === 429) return 'rate_limit'
+  if (status >= 500) return 'overloaded'
+  return 'error'
 }
 
-// Схема відповіді: змушуємо Gemini повертати строго такий JSON
-const responseSchema = {
+function reasonFromError(err: unknown, label: string): FailReason {
+  if (err instanceof Error && err.name === 'TimeoutError') {
+    console.error(`${label}: не відповів вчасно`)
+    return 'timeout'
+  }
+  console.error(`${label}: помилка з'єднання`, err)
+  return 'error'
+}
+
+// ---------- Провайдер 1: Google Gemini ----------
+
+const geminiSchema = {
   type: 'OBJECT',
   properties: {
     title: { type: 'STRING' },
@@ -45,6 +63,96 @@ const responseSchema = {
   required: ['title', 'cards'],
 }
 
+async function callGemini(model: string, apiKey: string, prompt: string): Promise<AttemptResult> {
+  const label = `Gemini (${model})`
+  try {
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              responseSchema: geminiSchema,
+              temperature: 0.7,
+              thinkingConfig: { thinkingLevel: 'low' },
+            },
+          }),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        },
+    )
+
+    if (!res.ok) {
+      console.error(`${label}: помилка ${res.status}`, await res.text())
+      return { ok: false, reason: reasonFromStatus(res.status) }
+    }
+
+    const data = await res.json()
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    if (typeof text !== 'string') {
+      console.error(`${label}: порожня відповідь`, JSON.stringify(data).slice(0, 500))
+      return { ok: false, reason: 'error' }
+    }
+    return { ok: true, text }
+  } catch (err) {
+    return { ok: false, reason: reasonFromError(err, label) }
+  }
+}
+
+// ---------- Провайдер 2: Groq (сумісний з OpenAI API) ----------
+
+async function callGroq(model: string, apiKey: string, prompt: string): Promise<AttemptResult> {
+  const label = `Groq (${model})`
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content:
+            'You create vocabulary flashcards. Reply with JSON only, in this exact format: ' +
+            '{"title": string, "cards": [{"term": string, "definition": string}]}',
+      },
+      { role: 'user', content: prompt },
+    ],
+    response_format: { type: 'json_object' },
+    temperature: 0.7,
+  }
+
+  // Моделі gpt-oss «думають» перед відповіддю — просимо думати менше, щоб було швидше
+  if (model.startsWith('openai/gpt-oss')) {
+    body.reasoning_effort = 'low'
+  }
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
+    })
+
+    if (!res.ok) {
+      console.error(`${label}: помилка ${res.status}`, await res.text())
+      return { ok: false, reason: reasonFromStatus(res.status) }
+    }
+
+    const data = await res.json()
+    const text = data?.choices?.[0]?.message?.content
+    if (typeof text !== 'string') {
+      console.error(`${label}: порожня відповідь`, JSON.stringify(data).slice(0, 500))
+      return { ok: false, reason: 'error' }
+    }
+    return { ok: true, text }
+  } catch (err) {
+    return { ok: false, reason: reasonFromError(err, label) }
+  }
+}
+
+// ---------- Основний обробник ----------
+
 Deno.serve(async (req) => {
   // Браузер спершу надсилає перевірочний запит OPTIONS (CORS)
   if (req.method === 'OPTIONS') {
@@ -54,14 +162,16 @@ Deno.serve(async (req) => {
     return json({ error: 'Method not allowed' }, 405)
   }
 
-  const apiKey = Deno.env.get('GEMINI_API_KEY')
-  if (!apiKey) {
-    return json({ error: 'На сервері не налаштовано ключ ШІ' }, 500)
-  }
+  // Ключі та моделі задаються секретами Supabase, без зміни коду
+  const geminiKey = Deno.env.get('GEMINI_API_KEY')
+  const geminiModel = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash'
+  const geminiFallbackModel = Deno.env.get('GEMINI_FALLBACK_MODEL')
+  const groqKey = Deno.env.get('GROQ_API_KEY')
+  const groqModel = Deno.env.get('GROQ_MODEL') ?? 'openai/gpt-oss-120b'
 
-  // Моделі можна змінити секретами без зміни коду
-  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash'
-  const fallbackModel = Deno.env.get('GEMINI_FALLBACK_MODEL')
+  if (!geminiKey && !groqKey) {
+    return json({ error: 'На сервері не налаштовано ключі ШІ' }, 500)
+  }
 
   // ---------- Перевірка вхідних даних ----------
   let body: Record<string, unknown>
@@ -82,7 +192,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Опис теми задовгий (максимум 300 символів)' }, 400)
   }
 
-  // ---------- Промпт ----------
+  // ---------- Промпт (спільний для всіх провайдерів) ----------
   const prompt = `You are helping a Ukrainian-speaking learner of English build a vocabulary flashcard set.
 
 Learner's request: "${topic}"
@@ -97,92 +207,70 @@ Rules:
 - "title": a short set title in Ukrainian (2–5 words).
 - If the request is unclear, create a vocabulary set loosely related to it.`
 
-  const requestBody = JSON.stringify({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema,
-      temperature: 0.7,
-      // Менше «роздумів» — швидша відповідь (для перекладу слів цього достатньо)
-      thinkingConfig: { thinkingLevel: 'low' },
-    },
-  })
+  // ---------- Ланцюжок провайдерів ----------
+  const attempts: { label: string; run: () => Promise<AttemptResult> }[] = []
 
-  function callGemini(modelName: string): Promise<Response> {
-    return fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey!,
-          },
-          body: requestBody,
-          // Не чекаємо вічно: після тайм-ауту запит обривається
-          signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
-        },
-    )
+  if (geminiKey) {
+    attempts.push({
+      label: `Gemini (${geminiModel})`,
+      run: () => callGemini(geminiModel, geminiKey, prompt),
+    })
+  }
+  if (groqKey) {
+    attempts.push({
+      label: `Groq (${groqModel})`,
+      run: () => callGroq(groqModel, groqKey, prompt),
+    })
+  }
+  if (geminiKey && geminiFallbackModel) {
+    attempts.push({
+      label: `Gemini (${geminiFallbackModel})`,
+      run: () => callGemini(geminiFallbackModel, geminiKey, prompt),
+    })
   }
 
-  // ---------- Запит до Gemini з повторними спробами ----------
-  // Дві спроби основною моделлю, потім (якщо задана) запасна модель
-  const attempts = fallbackModel ? [model, model, fallbackModel] : [model, model]
+  let text: string | null = null
+  let lastReason: FailReason = 'error'
 
-  let geminiResponse: Response | null = null
-  let timedOut = false
-
-  for (let i = 0; i < attempts.length; i++) {
+  for (const attempt of attempts) {
     const started = Date.now()
-    try {
-      geminiResponse = await callGemini(attempts[i])
-      timedOut = false
-      console.log(`Gemini (${attempts[i]}) відповів за ${Date.now() - started} мс, статус ${geminiResponse.status}`)
-    } catch (err) {
-      geminiResponse = null
-      timedOut = err instanceof Error && err.name === 'TimeoutError'
-      console.error(
-          timedOut
-              ? `Gemini (${attempts[i]}) не відповів за ${ATTEMPT_TIMEOUT_MS} мс`
-              : `Gemini fetch failed: ${err}`,
-      )
-    }
+    const result = await attempt.run()
+    const elapsed = Date.now() - started
 
-    // Успіх або помилка, яку повтор не виправить, — виходимо з циклу
-    if (geminiResponse && !RETRYABLE_STATUSES.includes(geminiResponse.status)) {
+    if (result.ok) {
+      console.log(`${attempt.label}: успіх за ${elapsed} мс`)
+      text = result.text
       break
     }
 
-    if (i < attempts.length - 1) {
-      console.warn(`Повторна спроба ${i + 2} з ${attempts.length}...`)
-      await sleep(1500 * (i + 1))
-    }
+    console.warn(`${attempt.label}: невдача (${result.reason}) за ${elapsed} мс, пробую наступного`)
+    lastReason = result.reason
   }
 
-  if (!geminiResponse) {
-    return timedOut
-        ? json({ error: 'ШІ відповідає занадто довго. Спробуй ще раз або зменш кількість слів.' }, 504)
-        : json({ error: 'Не вдалося зв\'язатися з ШІ' }, 502)
-  }
-  if (geminiResponse.status === 429) {
-    return json({ error: 'Перевищено ліміт запитів до ШІ. Спробуй за хвилину.' }, 429)
-  }
-  if (geminiResponse.status === 503) {
-    return json({ error: 'ШІ зараз перевантажений. Спробуй ще раз за хвилину.' }, 503)
-  }
-  if (!geminiResponse.ok) {
-    console.error('Gemini error:', geminiResponse.status, await geminiResponse.text())
-    return json({ error: 'ШІ тимчасово недоступний. Спробуй пізніше.' }, 502)
+  if (text === null) {
+    const messages: Record<FailReason, string> = {
+      timeout: 'ШІ відповідає занадто довго. Спробуй ще раз або зменш кількість слів.',
+      overloaded: 'ШІ зараз перевантажений. Спробуй ще раз за хвилину.',
+      rate_limit: 'Перевищено ліміт запитів до ШІ. Спробуй за хвилину.',
+      error: 'ШІ тимчасово недоступний. Спробуй пізніше.',
+    }
+    const statuses: Record<FailReason, number> = {
+      timeout: 504,
+      overloaded: 503,
+      rate_limit: 429,
+      error: 502,
+    }
+    return json({ error: messages[lastReason] }, statuses[lastReason])
   }
 
   // ---------- Розбір і очищення відповіді ----------
-  const data = await geminiResponse.json()
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-
   let parsed: { title?: unknown; cards?: unknown }
   try {
-    parsed = JSON.parse(text)
+    // Деякі моделі загортають JSON у ```json ... ``` — прибираємо це
+    const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+    parsed = JSON.parse(cleaned)
   } catch {
-    console.error('Invalid JSON from Gemini:', text)
+    console.error('Некоректний JSON від ШІ:', text.slice(0, 500))
     return json({ error: 'ШІ повернув некоректну відповідь. Спробуй ще раз.' }, 502)
   }
 
