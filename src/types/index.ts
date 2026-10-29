@@ -1,21 +1,21 @@
-export type Role = 'student' | 'teacher'
+export type Role = "student" | "teacher";
 
 export interface Profile {
-    id: string
-    username: string
-    role: Role
-    created_at: string
+  id: string;
+  username: string;
+  role: Role;
+  created_at: string;
 }
 // Назва StudySet, а не Set, бо Set уже є вбудованим типом у JavaScript
 export interface StudySet {
-    id: string
-    owner_id: string
-    title: string
-    description: string | null
-    term_lang: string
-    definition_lang: string
-    is_public: boolean
-    created_at: string
+  id: string;
+  owner_id: string;
+  title: string;
+  description: string | null;
+  term_lang: string;
+  definition_lang: string;
+  is_public: boolean;
+  created_at: string;
 }
 
 export interface Card {
@@ -34,9 +34,16 @@ export interface CardDraft {
   term: string;
   definition: string;
 }
-export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1'
+export type Level = "A1" | "A2" | "B1" | "B2" | "C1";
 
 export interface GeneratedSet {
-    title: string
-    cards: { term: string; definition: string }[]
+  title: string;
+  cards: { term: string; definition: string }[];
+}
+export interface ClassRoom {
+  id: string;
+  teacher_id: string;
+  name: string;
+  join_code: string;
+  created_at: string;
 }

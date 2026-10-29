@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { supabase } from "../lib/supabase";
@@ -13,24 +13,35 @@ export default function EditSetPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const { set, cards, loading, notFound } = useSetWithCards(id);
+  const [canEdit, setCanEdit] = useState<boolean | null>(null);
 
-  if (loading) return <p>Завантаження...</p>;
+  // Права перевіряє база: власник або учень класу з дозволом
+  useEffect(() => {
+    if (!set) return;
+    supabase
+      .rpc("can_edit_set", { sid: set.id })
+      .then(({ data }) => setCanEdit(Boolean(data)));
+  }, [set]);
+
+  if (loading || (set && canEdit === null)) return <p>Завантаження...</p>;
   if (notFound || !set) return <SetNotFound />;
 
-  // Поки що редагувати може лише власник. Права учнів у класах додамо пізніше
-  if (user?.id !== set.owner_id) {
+  if (!canEdit) {
     return <Navigate to={`/sets/${set.id}`} replace />;
   }
 
-  return <EditSetForm set={set} cards={cards} />;
+  return (
+    <EditSetForm set={set} cards={cards} isOwner={user?.id === set.owner_id} />
+  );
 }
 
 interface EditSetFormProps {
   set: StudySet;
   cards: Card[];
+  isOwner: boolean;
 }
 
-function EditSetForm({ set, cards }: EditSetFormProps) {
+function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState(set.title);
@@ -50,7 +61,7 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) {
+    if (isOwner && !title.trim()) {
       setError("Введи назву сету");
       return;
     }
@@ -64,15 +75,17 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
     setSaving(true);
 
     try {
-      // 1. Оновлюємо назву та опис
-      const { error: updateError } = await supabase
-        .from("sets")
-        .update({
-          title: title.trim(),
-          description: description.trim() || null,
-        })
-        .eq("id", set.id);
-      if (updateError) throw updateError;
+      // 1. Назву та опис може змінювати лише власник
+      if (isOwner) {
+        const { error: updateError } = await supabase
+          .from("sets")
+          .update({
+            title: title.trim(),
+            description: description.trim() || null,
+          })
+          .eq("id", set.id);
+        if (updateError) throw updateError;
+      }
 
       // 2. Видаляємо картки, які прибрали з редактора
       const keptIds = new Set(
@@ -90,7 +103,7 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
         if (deleteError) throw deleteError;
       }
 
-      // 3. Оновлюємо існуючі картки і додаємо нові (upsert = update або insert)
+      // 3. Оновлюємо існуючі картки і додаємо нові
       const { error: upsertError } = await supabase.from("cards").upsert(
         validCards.map((card, index) => ({
           id: card.id ?? crypto.randomUUID(),
@@ -117,6 +130,13 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
       </Link>
       <h1>Редагування сету</h1>
 
+      {!isOwner && (
+        <p className="notice">
+          Викладач дозволив редагувати картки цього сету. Назву й опис може
+          змінювати лише автор.
+        </p>
+      )}
+
       <form className="set-form" onSubmit={handleSubmit}>
         <label className="field">
           Назва
@@ -124,6 +144,7 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            disabled={!isOwner}
           />
         </label>
 
@@ -133,6 +154,7 @@ function EditSetForm({ set, cards }: EditSetFormProps) {
             className="input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={!isOwner}
           />
         </label>
 

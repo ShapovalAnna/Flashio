@@ -22,6 +22,7 @@ export default function Layout() {
           {user ? (
             <>
               <NavLink to="/sets">Мої сети</NavLink>
+              <NavLink to="/classes">Класи</NavLink>
               <span className="user-name">
                 {profile?.username}
                 {profile?.role === "teacher" && " (викладач)"}

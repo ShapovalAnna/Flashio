@@ -11,6 +11,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 import EditSetPage from "./pages/EditSetPage";
 import StudyPage from "./pages/StudyPage";
 import QuizPage from "./pages/QuizPage";
+import ClassesPage from "./pages/ClassesPage";
+import ClassPage from "./pages/ClassPage";
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="sets/:id/edit" element={<EditSetPage />} />
           <Route path="sets/:id/study" element={<StudyPage />} />
           <Route path="sets/:id/quiz" element={<QuizPage />} />
+          <Route path="classes" element={<ClassesPage />} />
+          <Route path="classes/:id" element={<ClassPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

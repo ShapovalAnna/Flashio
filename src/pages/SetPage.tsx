@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
@@ -10,6 +11,15 @@ export default function SetPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { set, cards, loading, notFound } = useSetWithCards(id);
+  const [canEdit, setCanEdit] = useState(false);
+
+  // Питаємо базу, чи може поточний користувач редагувати цей сет
+  useEffect(() => {
+    if (!set) return;
+    supabase
+      .rpc("can_edit_set", { sid: set.id })
+      .then(({ data }) => setCanEdit(Boolean(data)));
+  }, [set]);
 
   async function handleDelete() {
     if (!set) return;
@@ -34,8 +44,8 @@ export default function SetPage() {
 
   return (
     <div>
-      <Link to="/sets" className="back-link">
-        ← Мої сети
+      <Link to={isOwner ? "/sets" : "/classes"} className="back-link">
+        {isOwner ? "← Мої сети" : "← Мої класи"}
       </Link>
 
       <div className="page-header">
@@ -45,14 +55,18 @@ export default function SetPage() {
           <p className="muted">{cardsCountLabel(cards.length)}</p>
         </div>
 
-        {isOwner && (
+        {(canEdit || isOwner) && (
           <div className="header-actions">
-            <Link to={`/sets/${set.id}/edit`} className="secondary-button">
-              Редагувати
-            </Link>
-            <button className="danger-button" onClick={handleDelete}>
-              Видалити
-            </button>
+            {canEdit && (
+              <Link to={`/sets/${set.id}/edit`} className="secondary-button">
+                Редагувати
+              </Link>
+            )}
+            {isOwner && (
+              <button className="danger-button" onClick={handleDelete}>
+                Видалити
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -63,6 +77,7 @@ export default function SetPage() {
           <strong>Картки</strong>
           <span className="muted">Перегортай і запам'ятовуй</span>
         </Link>
+
         <Link to={`/sets/${set.id}/quiz`} className="mode-tile">
           <span className="choice-icon">📝</span>
           <strong>Тест</strong>
