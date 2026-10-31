@@ -1,0 +1,30 @@
+# «Будильник» для Supabase: раз на 3 дні робить запит до бази,
+# щоб безкоштовний проєкт не ставився на паузу через неактивність.
+
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: "0 9 */3 * *" # кожні 3 дні о 09:00 за UTC
+  workflow_dispatch: # кнопка ручного запуску на GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY")
+
+          echo "Supabase відповів кодом HTTP $status"
+
+          # 000 — немає з'єднання, 5xx — помилка сервера (наприклад, проєкт на паузі)
+          if [ "$status" = "000" ] || [ "$status" -ge 500 ]; then
+            echo "Supabase недоступний"
+            exit 1
+          fi
