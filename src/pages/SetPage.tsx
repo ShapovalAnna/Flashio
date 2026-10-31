@@ -6,6 +6,8 @@ import { cardsCountLabel } from "../lib/cards";
 import { useSetWithCards } from "../hooks/useSetWithCards";
 import SetNotFound from "../components/SetNotFound";
 import SpeakButton from "../components/SpeakButton";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+
 
 export default function SetPage() {
   const { id } = useParams();
@@ -13,6 +15,7 @@ export default function SetPage() {
   const navigate = useNavigate();
   const { set, cards, loading, notFound } = useSetWithCards(id);
   const [canEdit, setCanEdit] = useState(false);
+  useDocumentTitle(set?.title);
 
   // Питаємо базу, чи може поточний користувач редагувати цей сет
   useEffect(() => {

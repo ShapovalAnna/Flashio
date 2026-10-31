@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel, studentsCountLabel } from "../lib/cards";
 import type { ClassRoom } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 interface MemberRow {
   user_id: string;
@@ -40,6 +41,7 @@ export default function ClassPage() {
   // Зміна version змушує перезавантажити дані після будь-якої дії
   const [version, setVersion] = useState(0);
   const refresh = () => setVersion((v) => v + 1);
+  useDocumentTitle(classRoom?.name);
 
   useEffect(() => {
     if (!id || !userId) return;

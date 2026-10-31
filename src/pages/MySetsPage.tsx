@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel } from "../lib/cards";
 import type { StudySet } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 interface SetWithCount extends StudySet {
   cards: { count: number }[];
@@ -16,6 +17,7 @@ export default function MySetsPage() {
   const [sets, setSets] = useState<SetWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+    useDocumentTitle("Мої сети");
 
   useEffect(() => {
     if (!userId) return;

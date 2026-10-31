@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { studentsCountLabel } from "../lib/cards";
 import type { ClassRoom } from "../types";
-
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 interface ClassWithCount extends ClassRoom {
   class_members?: { count: number }[];
 }
@@ -13,6 +13,7 @@ interface ClassWithCount extends ClassRoom {
 export default function ClassesPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  useDocumentTitle("Мої класи");
 
   const userId = user?.id;
   const role = profile?.role;

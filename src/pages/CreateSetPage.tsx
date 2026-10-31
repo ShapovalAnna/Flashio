@@ -7,12 +7,14 @@ import { createEmptyCard, validateCards } from "../lib/cards";
 import CardsEditor from "../components/CardsEditor";
 import AiGenerateForm from "../components/AiGenerateForm";
 import type { CardDraft, GeneratedSet } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 type Mode = "choose" | "manual" | "ai";
 
 export default function CreateSetPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useDocumentTitle("Новий сет");
 
   // Якщо в адресі вказано спосіб (?mode=ai або ?mode=manual), одразу відкриваємо потрібний екран
   const [searchParams] = useSearchParams();

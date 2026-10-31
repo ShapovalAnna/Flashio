@@ -5,10 +5,12 @@ import { buildQuestions, type QuizQuestion } from "../lib/quiz";
 import SetNotFound from "../components/SetNotFound";
 import SpeakButton from "../components/SpeakButton";
 import type { Card, StudySet } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function QuizPage() {
   const { id } = useParams();
   const { set, cards, loading, notFound } = useSetWithCards(id);
+  useDocumentTitle(set ? `Тест: ${set.title}` : undefined);
 
   if (loading) return <p>Завантаження...</p>;
   if (notFound || !set) return <SetNotFound />;

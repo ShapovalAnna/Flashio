@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from "react-router";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import type { Role } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<Role>("student");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  useDocumentTitle("Реєстрація");
 
   if (user) {
     return <Navigate to="/sets" replace />;

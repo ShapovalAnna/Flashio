@@ -4,10 +4,11 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel } from "../lib/cards";
 import type { StudySet } from "../types";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
-
+  useDocumentTitle();
   if (loading) return <p>Завантаження...</p>;
 
   return user ? <Dashboard /> : <Landing />;

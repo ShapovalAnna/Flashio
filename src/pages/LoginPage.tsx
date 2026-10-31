@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  useDocumentTitle("Вхід");
 
   if (user) {
     return <Navigate to="/sets" replace />;

@@ -6,10 +6,12 @@ import SetNotFound from "../components/SetNotFound";
 import type { Card, StudySet } from "../types";
 import SpeakButton from "../components/SpeakButton";
 import { speak } from "../lib/speech";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function StudyPage() {
   const { id } = useParams();
   const { set, cards, loading, notFound } = useSetWithCards(id);
+  useDocumentTitle(set ? `Картки: ${set.title}` : undefined);
 
   if (loading) return <p>Завантаження...</p>;
   if (notFound || !set) return <SetNotFound />;

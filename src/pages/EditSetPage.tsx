@@ -8,13 +8,14 @@ import { useSetWithCards } from "../hooks/useSetWithCards";
 import CardsEditor from "../components/CardsEditor";
 import SetNotFound from "../components/SetNotFound";
 import type { Card, CardDraft, StudySet } from "../types";
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export default function EditSetPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const { set, cards, loading, notFound } = useSetWithCards(id);
   const [canEdit, setCanEdit] = useState<boolean | null>(null);
-
+  useDocumentTitle(set ? `Редагування: ${set.title}` : undefined);
   // Права перевіряє база: власник або учень класу з дозволом
   useEffect(() => {
     if (!set) return;
