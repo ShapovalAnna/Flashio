@@ -135,7 +135,7 @@ function Dashboard() {
           <span className="quick-action-text">Опиши тему, і слова готові</span>
         </Link>
 
-        <Link to="/sets/new" className="quick-action">
+        <Link to="/sets/new?mode=manual" className="quick-action">
           <span className="choice-icon">✍️</span>
           <strong>Сет вручну</strong>
           <span className="quick-action-text">

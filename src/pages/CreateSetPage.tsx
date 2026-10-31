@@ -14,10 +14,11 @@ export default function CreateSetPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Якщо перейшли за посиланням /sets/new?mode=ai, одразу відкриваємо генерацію ШІ
+  // Якщо в адресі вказано спосіб (?mode=ai або ?mode=manual), одразу відкриваємо потрібний екран
   const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode");
   const [mode, setMode] = useState<Mode>(
-    searchParams.get("mode") === "ai" ? "ai" : "choose",
+    initialMode === "ai" || initialMode === "manual" ? initialMode : "choose",
   );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
