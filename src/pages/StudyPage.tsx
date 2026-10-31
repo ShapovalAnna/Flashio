@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useSetWithCards } from "../hooks/useSetWithCards";
-import { shuffle } from "../lib/cards";
-import SetNotFound from "../components/SetNotFound";
-import type { Card, StudySet } from "../types";
-import SpeakButton from "../components/SpeakButton";
-import { speak } from "../lib/speech";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { shuffle } from "../lib/cards";
+import { speak } from "../lib/speech";
+import SetNotFound from "../components/SetNotFound";
+import SpeakButton from "../components/SpeakButton";
+import type { Card, StudySet } from "../types";
 
 export default function StudyPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { set, cards, loading, notFound } = useSetWithCards(id);
-  useDocumentTitle(set ? `Картки: ${set.title}` : undefined);
+  useDocumentTitle(
+    set ? t("study.pageTitle", { title: set.title }) : undefined,
+  );
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>{t("common.loading")}</p>;
   if (notFound || !set) return <SetNotFound />;
 
   return (
@@ -21,10 +25,10 @@ export default function StudyPage() {
       <Link to={`/sets/${set.id}`} className="back-link">
         ← {set.title}
       </Link>
-      <h1>Картки</h1>
+      <h1>{t("study.title")}</h1>
 
       {cards.length === 0 ? (
-        <p className="muted">У цьому сеті ще немає карток.</p>
+        <p className="muted">{t("study.empty")}</p>
       ) : (
         <FlashcardsSession set={set} cards={cards} />
       )}
@@ -38,6 +42,8 @@ interface FlashcardsSessionProps {
 }
 
 function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
+  const { t } = useTranslation();
+
   const [queue, setQueue] = useState<Card[]>(cards);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -91,6 +97,7 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
+
   // Англійське слово видно на лицьовій стороні, а в режимі «Спочатку переклад» — на зворотній
   const termVisible = reverse ? flipped : !flipped;
 
@@ -99,13 +106,14 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
     if (!autoSpeak || finished || !current || !termVisible) return;
     speak(current.term, set.term_lang);
   }, [autoSpeak, finished, current, termVisible, set.term_lang]);
+
   if (finished) {
     return (
       <div className="study-finished">
-        <h2>Готово! 🎉</h2>
+        <h2>{t("study.done")}</h2>
         <p>
-          Знаю: <strong>{knownCount}</strong> · Ще вчу:{" "}
-          <strong>{learning.length}</strong>
+          {t("study.knownCount")}: <strong>{knownCount}</strong> ·{" "}
+          {t("study.learningCount")}: <strong>{learning.length}</strong>
         </p>
 
         <div className="study-actions">
@@ -114,14 +122,14 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
               className="primary-button"
               onClick={() => restart(learning)}
             >
-              Повторити ті, що ще вчу ({learning.length})
+              {t("study.repeatLearning", { n: learning.length })}
             </button>
           )}
           <button className="secondary-button" onClick={() => restart(cards)}>
-            Почати спочатку
+            {t("study.restart")}
           </button>
           <Link to={`/sets/${set.id}`} className="secondary-button">
-            До сету
+            {t("study.toSet")}
           </Link>
         </div>
       </div>
@@ -148,9 +156,8 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
                 e.target.blur();
               }}
             />
-            Спочатку переклад
+            {t("study.reverse")}
           </label>
-
           <label className="toggle">
             <input
               type="checkbox"
@@ -160,14 +167,13 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
                 e.target.blur();
               }}
             />
-            Автоозвучення
+            {t("study.autoSpeak")}
           </label>
-
           <button
             className="secondary-button"
             onClick={() => restart(shuffle(cards))}
           >
-            Перемішати
+            {t("study.shuffle")}
           </button>
         </div>
       </div>
@@ -197,7 +203,7 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
                 />
               </div>
             )}
-            <span className="flashcard-hint">Натисни, щоб перевернути</span>
+            <span className="flashcard-hint">{t("study.flipHint")}</span>
           </div>
           <div className="flashcard-face flashcard-back">
             {back}
@@ -216,16 +222,14 @@ function FlashcardsSession({ set, cards }: FlashcardsSessionProps) {
 
       <div className="study-actions">
         <button className="learning-button" onClick={() => answer(false)}>
-          ✕ Ще вчу
+          {t("study.learning")}
         </button>
         <button className="known-button" onClick={() => answer(true)}>
-          ✓ Знаю
+          {t("study.known")}
         </button>
       </div>
 
-      <p className="muted keyboard-hint">
-        Пробіл — перевернути · ← ще вчу · → знаю
-      </p>
+      <p className="muted keyboard-hint">{t("study.keyboardHint")}</p>
     </div>
   );
 }

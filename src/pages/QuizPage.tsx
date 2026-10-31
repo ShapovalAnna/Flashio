@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useSetWithCards } from "../hooks/useSetWithCards";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { buildQuestions, type QuizQuestion } from "../lib/quiz";
 import SetNotFound from "../components/SetNotFound";
 import SpeakButton from "../components/SpeakButton";
 import type { Card, StudySet } from "../types";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function QuizPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { set, cards, loading, notFound } = useSetWithCards(id);
-  useDocumentTitle(set ? `Тест: ${set.title}` : undefined);
+  useDocumentTitle(set ? t("quiz.pageTitle", { title: set.title }) : undefined);
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>{t("common.loading")}</p>;
   if (notFound || !set) return <SetNotFound />;
 
   return (
@@ -20,10 +22,10 @@ export default function QuizPage() {
       <Link to={`/sets/${set.id}`} className="back-link">
         ← {set.title}
       </Link>
-      <h1>Тест</h1>
+      <h1>{t("quiz.title")}</h1>
 
       {cards.length < 2 ? (
-        <p className="muted">Для тесту потрібно щонайменше 2 картки.</p>
+        <p className="muted">{t("quiz.needTwo")}</p>
       ) : (
         <QuizSession set={set} cards={cards} />
       )}
@@ -45,6 +47,8 @@ interface QuizSessionProps {
 }
 
 function QuizSession({ set, cards }: QuizSessionProps) {
+  const { t } = useTranslation();
+
   const [phase, setPhase] = useState<Phase>("setup");
   const [reverse, setReverse] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -108,10 +112,10 @@ function QuizSession({ set, cards }: QuizSessionProps) {
   if (phase === "setup") {
     return (
       <div className="quiz-setup">
-        <h2>Налаштування тесту</h2>
+        <h2>{t("quiz.setupTitle")}</h2>
 
         <fieldset className="radio-group">
-          <legend>Що показувати в питанні</legend>
+          <legend>{t("quiz.directionLegend")}</legend>
           <label>
             <input
               type="radio"
@@ -119,7 +123,7 @@ function QuizSession({ set, cards }: QuizSessionProps) {
               checked={!reverse}
               onChange={() => setReverse(false)}
             />
-            Слово → обрати переклад
+            {t("quiz.termToDef")}
           </label>
           <label>
             <input
@@ -128,21 +132,16 @@ function QuizSession({ set, cards }: QuizSessionProps) {
               checked={reverse}
               onChange={() => setReverse(true)}
             />
-            Переклад → обрати слово
+            {t("quiz.defToTerm")}
           </label>
         </fieldset>
 
-        <p className="muted">Кількість питань: {cards.length}</p>
+        <p className="muted">{t("quiz.questionsCount", { n: cards.length })}</p>
 
-        {cards.length < 4 && (
-          <p className="notice">
-            Для повноцінного тесту краще мати щонайменше 4 картки, тоді буде 4
-            варіанти відповіді.
-          </p>
-        )}
+        {cards.length < 4 && <p className="notice">{t("quiz.fewCards")}</p>}
 
         <button className="primary-button" onClick={() => start(cards)}>
-          Почати тест
+          {t("quiz.start")}
         </button>
       </div>
     );
@@ -154,19 +153,16 @@ function QuizSession({ set, cards }: QuizSessionProps) {
     const percent = total > 0 ? Math.round((correctCount / total) * 100) : 0;
     const mistakes = results.filter((r) => !r.isCorrect);
 
-    let message = "Варто ще повторити слова";
-    if (percent >= 90) message = "Чудовий результат! 🎉";
-    else if (percent >= 60) message = "Непогано, ще трохи практики 💪";
+    let message = t("quiz.msgBad");
+    if (percent >= 90) message = t("quiz.msgGreat");
+    else if (percent >= 60) message = t("quiz.msgGood");
 
     return (
       <div className="quiz-results">
         <div className="score-card">
-          <p className="muted">Твій результат</p>
+          <p className="muted">{t("quiz.yourResult")}</p>
           <p className="score-value">{percent}%</p>
-          <p>
-            Правильно: <strong>{correctCount}</strong> з{" "}
-            <strong>{total}</strong>
-          </p>
+          <p>{t("quiz.correctOf", { correct: correctCount, total })}</p>
           <p className="muted">{message}</p>
 
           <div className="study-actions">
@@ -175,38 +171,40 @@ function QuizSession({ set, cards }: QuizSessionProps) {
                 className="primary-button"
                 onClick={() => start(mistakes.map((m) => m.question.card))}
               >
-                Повторити помилки ({mistakes.length})
+                {t("quiz.repeatMistakes", { n: mistakes.length })}
               </button>
             )}
             <button className="secondary-button" onClick={() => start(cards)}>
-              Пройти ще раз
+              {t("quiz.again")}
             </button>
             <button
               className="secondary-button"
               onClick={() => setPhase("setup")}
             >
-              Налаштування
+              {t("quiz.settings")}
             </button>
             <Link to={`/sets/${set.id}`} className="secondary-button">
-              До сету
+              {t("quiz.toSet")}
             </Link>
           </div>
         </div>
 
         {mistakes.length > 0 && (
           <>
-            <h2>Помилки</h2>
+            <h2>{t("quiz.mistakes")}</h2>
             <div className="mistakes-list">
               {mistakes.map((m) => (
                 <div key={m.question.card.id} className="mistake-item">
                   <strong>{m.question.prompt}</strong>
                   <p>
-                    Правильно:{" "}
+                    {t("quiz.correctLabel")}{" "}
                     <span className="feedback-correct">
                       {m.question.correct}
                     </span>
                   </p>
-                  <p className="muted">Твоя відповідь: {m.chosen}</p>
+                  <p className="muted">
+                    {t("quiz.yourAnswer", { answer: m.chosen })}
+                  </p>
                 </div>
               ))}
             </div>
@@ -231,9 +229,14 @@ function QuizSession({ set, cards }: QuizSessionProps) {
     <div className="quiz">
       <div className="study-toolbar">
         <span className="muted">
-          Питання {index + 1} з {questions.length}
+          {t("quiz.questionOf", {
+            current: index + 1,
+            total: questions.length,
+          })}
         </span>
-        <span className="muted">Правильно: {correctCount}</span>
+        <span className="muted">
+          {t("quiz.correctSoFar", { value: correctCount })}
+        </span>
       </div>
 
       <div className="progress">
@@ -245,7 +248,7 @@ function QuizSession({ set, cards }: QuizSessionProps) {
 
       <div className="quiz-card">
         <p className="quiz-label">
-          {reverse ? "Обери слово англійською" : "Обери правильний переклад"}
+          {reverse ? t("quiz.chooseTerm") : t("quiz.chooseDef")}
         </p>
         <div className="quiz-prompt-row">
           <p className="quiz-prompt">{current.prompt}</p>
@@ -277,21 +280,19 @@ function QuizSession({ set, cards }: QuizSessionProps) {
       {selected !== null && (
         <div className="quiz-feedback">
           {isCorrect ? (
-            <p className="feedback-correct">✓ Правильно!</p>
+            <p className="feedback-correct">{t("quiz.feedbackCorrect")}</p>
           ) : (
             <p className="feedback-wrong">
-              ✕ Правильна відповідь: {current.correct}
+              {t("quiz.feedbackWrong", { answer: current.correct })}
             </p>
           )}
           <button className="primary-button" onClick={next}>
-            {index + 1 >= questions.length ? "Результати →" : "Далі →"}
+            {index + 1 >= questions.length ? t("quiz.results") : t("quiz.next")}
           </button>
         </div>
       )}
 
-      <p className="muted keyboard-hint">
-        1–4 — обрати відповідь · Enter — далі
-      </p>
+      <p className="muted keyboard-hint">{t("quiz.keyboardHint")}</p>
     </div>
   );
 }

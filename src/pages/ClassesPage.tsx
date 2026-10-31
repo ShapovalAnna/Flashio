@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { studentsCountLabel } from "../lib/cards";
-import type { ClassRoom } from "../types";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import type { ClassRoom } from "../types";
+
 interface ClassWithCount extends ClassRoom {
   class_members?: { count: number }[];
 }
 
 export default function ClassesPage() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  useDocumentTitle("Мої класи");
+  useDocumentTitle(t("classes.title"));
 
   const userId = user?.id;
   const role = profile?.role;
@@ -21,7 +24,7 @@ export default function ClassesPage() {
 
   const [classes, setClasses] = useState<ClassWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const [newName, setNewName] = useState("");
   const [code, setCode] = useState("");
@@ -34,35 +37,35 @@ export default function ClassesPage() {
     async function load(uid: string, teacher: boolean) {
       if (teacher) {
         // Викладач: класи, які він створив, з кількістю учнів
-        const { data, error: loadError } = await supabase
+        const { data, error } = await supabase
           .from("classes")
           .select("*, class_members(count)")
           .eq("teacher_id", uid)
           .order("created_at", { ascending: false });
 
-        if (loadError) {
-          console.error(loadError);
-          setError("Не вдалося завантажити класи");
+        if (error) {
+          console.error(error);
+          setLoadFailed(true);
         } else {
           setClasses(data ?? []);
         }
       } else {
         // Учень: класи, до яких він вступив
-        const { data, error: loadError } = await supabase
+        const { data, error } = await supabase
           .from("class_members")
           .select("classes(*)")
           .eq("user_id", uid)
           .order("joined_at", { ascending: false });
 
-        if (loadError) {
-          console.error(loadError);
-          setError("Не вдалося завантажити класи");
+        if (error) {
+          console.error(error);
+          setLoadFailed(true);
         } else {
-            setClasses(
-              (data ?? [])
-                .map((row) => row.classes)
-                .filter(Boolean) as unknown as ClassWithCount[],
-            );
+          setClasses(
+            (data ?? [])
+              .map((row) => row.classes)
+              .filter(Boolean) as unknown as ClassWithCount[],
+          );
         }
       }
       setLoading(false);
@@ -77,7 +80,7 @@ export default function ClassesPage() {
 
     const name = newName.trim();
     if (!name) {
-      setFormError("Введи назву класу");
+      setFormError(t("classes.enterName"));
       return;
     }
 
@@ -85,15 +88,15 @@ export default function ClassesPage() {
     setFormError(null);
 
     const classId = crypto.randomUUID();
-    const { error: insertError } = await supabase
+    const { error } = await supabase
       .from("classes")
       .insert({ id: classId, teacher_id: userId, name });
 
     setSubmitting(false);
 
-    if (insertError) {
-      console.error(insertError);
-      setFormError("Не вдалося створити клас");
+    if (error) {
+      console.error(error);
+      setFormError(t("classes.createFailed"));
       return;
     }
 
@@ -104,7 +107,7 @@ export default function ClassesPage() {
     e.preventDefault();
 
     if (!code.trim()) {
-      setFormError("Введи код класу");
+      setFormError(t("classes.enterCode"));
       return;
     }
 
@@ -112,15 +115,20 @@ export default function ClassesPage() {
     setFormError(null);
 
     // Функція join_class у базі знаходить клас за кодом і додає учня
-    const { data, error: joinError } = await supabase.rpc("join_class", {
+    const { data, error } = await supabase.rpc("join_class", {
       code: code.trim(),
     });
 
     setSubmitting(false);
 
-    if (joinError) {
-      console.error(joinError);
-      setFormError(joinError.message);
+    if (error) {
+      console.error(error);
+      // База повертає українське повідомлення, тому розпізнаємо його і перекладаємо
+      setFormError(
+        error.message.includes("не знайдено")
+          ? t("classes.codeNotFound")
+          : t("classes.joinFailed"),
+      );
       return;
     }
 
@@ -129,13 +137,13 @@ export default function ClassesPage() {
 
   return (
     <div>
-      <h1>Мої класи</h1>
+      <h1>{t("classes.title")}</h1>
 
       {isTeacher ? (
         <form className="panel inline-form" onSubmit={handleCreate}>
           <input
             className="input"
-            placeholder="Назва нового класу, наприклад: 9-Б, англійська"
+            placeholder={t("classes.newPlaceholder")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
@@ -144,14 +152,14 @@ export default function ClassesPage() {
             className="primary-button"
             disabled={submitting}
           >
-            Створити клас
+            {t("classes.create")}
           </button>
         </form>
       ) : (
         <form className="panel inline-form" onSubmit={handleJoin}>
           <input
             className="input code-input"
-            placeholder="Код класу від викладача"
+            placeholder={t("classes.codePlaceholder")}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={10}
@@ -161,27 +169,27 @@ export default function ClassesPage() {
             className="primary-button"
             disabled={submitting}
           >
-            Вступити
+            {t("classes.join")}
           </button>
         </form>
       )}
 
       {formError && <p className="error">{formError}</p>}
 
-      {loading && <p>Завантаження...</p>}
-      {error && <p className="error">{error}</p>}
+      {loading && <p>{t("common.loading")}</p>}
+      {loadFailed && <p className="error">{t("classes.loadError")}</p>}
 
-      {!loading && !error && classes.length === 0 && (
+      {!loading && !loadFailed && classes.length === 0 && (
         <div className="empty-state">
           <h2>
             {isTeacher
-              ? "У тебе ще немає класів"
-              : "Ти ще не вступив до жодного класу"}
+              ? t("classes.emptyTeacherTitle")
+              : t("classes.emptyStudentTitle")}
           </h2>
           <p className="muted">
             {isTeacher
-              ? "Створи клас і поділися кодом з учнями."
-              : "Попроси викладача дати тобі код класу."}
+              ? t("classes.emptyTeacherText")
+              : t("classes.emptyStudentText")}
           </p>
         </div>
       )}

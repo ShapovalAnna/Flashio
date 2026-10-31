@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel, studentsCountLabel } from "../lib/cards";
-import type { ClassRoom } from "../types";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import type { ClassRoom } from "../types";
 
 interface MemberRow {
   user_id: string;
@@ -24,6 +25,7 @@ interface OwnSet {
 }
 
 export default function ClassPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export default function ClassPage() {
   // Зміна version змушує перезавантажити дані після будь-якої дії
   const [version, setVersion] = useState(0);
   const refresh = () => setVersion((v) => v + 1);
+
   useDocumentTitle(classRoom?.name);
 
   useEffect(() => {
@@ -87,6 +90,7 @@ export default function ClassPage() {
       if (cancelled) return;
 
       setClassRoom(classData);
+      // Supabase повертає вкладені записи як об'єкти, тому явно вказуємо тип
       setMembers((membersRes.data ?? []) as unknown as MemberRow[]);
       setClassSets((setsRes.data ?? []) as unknown as ClassSetRow[]);
       setOwnSets(ownRes.data ?? []);
@@ -100,17 +104,15 @@ export default function ClassPage() {
     };
   }, [id, userId, version]);
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>{t("common.loading")}</p>;
 
   if (notFound || !classRoom) {
     return (
       <div>
-        <h1>Клас не знайдено</h1>
-        <p className="muted">
-          Можливо, його видалили або ти не є його учасником.
-        </p>
+        <h1>{t("classes.notFoundTitle")}</h1>
+        <p className="muted">{t("classes.notFoundText")}</p>
         <Link to="/classes" className="back-link">
-          ← Мої класи
+          {t("classes.back")}
         </Link>
       </div>
     );
@@ -139,7 +141,7 @@ export default function ClassPage() {
 
     if (error) {
       console.error(error);
-      alert("Не вдалося додати сет");
+      alert(t("classes.errors.addSet"));
       return;
     }
     setSelectedSetId("");
@@ -155,7 +157,7 @@ export default function ClassPage() {
 
     if (error) {
       console.error(error);
-      alert("Не вдалося змінити налаштування");
+      alert(t("classes.errors.toggle"));
       return;
     }
     refresh();
@@ -163,9 +165,7 @@ export default function ClassPage() {
 
   async function removeSet(row: ClassSetRow) {
     if (
-      !window.confirm(
-        `Прибрати сет «${row.sets?.title}» з класу? Сам сет не видалиться.`,
-      )
+      !window.confirm(t("classes.confirmRemoveSet", { title: row.sets?.title }))
     )
       return;
 
@@ -177,7 +177,7 @@ export default function ClassPage() {
 
     if (error) {
       console.error(error);
-      alert("Не вдалося прибрати сет");
+      alert(t("classes.errors.removeSet"));
       return;
     }
     refresh();
@@ -185,7 +185,9 @@ export default function ClassPage() {
 
   async function removeMember(member: MemberRow) {
     if (
-      !window.confirm(`Видалити учня «${member.profiles?.username}» з класу?`)
+      !window.confirm(
+        t("classes.confirmRemoveStudent", { name: member.profiles?.username }),
+      )
     )
       return;
 
@@ -197,24 +199,20 @@ export default function ClassPage() {
 
     if (error) {
       console.error(error);
-      alert("Не вдалося видалити учня");
+      alert(t("classes.errors.removeStudent"));
       return;
     }
     refresh();
   }
 
   async function deleteClass() {
-    if (
-      !window.confirm(
-        `Видалити клас «${room.name}»? Сети викладача залишаться.`,
-      )
-    )
+    if (!window.confirm(t("classes.confirmDelete", { name: room.name })))
       return;
 
     const { error } = await supabase.from("classes").delete().eq("id", room.id);
     if (error) {
       console.error(error);
-      alert("Не вдалося видалити клас");
+      alert(t("classes.errors.delete"));
       return;
     }
     navigate("/classes");
@@ -223,7 +221,7 @@ export default function ClassPage() {
   // ---------- Дія учня ----------
 
   async function leaveClass() {
-    if (!window.confirm(`Вийти з класу «${room.name}»?`)) return;
+    if (!window.confirm(t("classes.confirmLeave", { name: room.name }))) return;
 
     const { error } = await supabase
       .from("class_members")
@@ -233,7 +231,7 @@ export default function ClassPage() {
 
     if (error) {
       console.error(error);
-      alert("Не вдалося вийти з класу");
+      alert(t("classes.errors.leave"));
       return;
     }
     navigate("/classes");
@@ -242,7 +240,7 @@ export default function ClassPage() {
   return (
     <div>
       <Link to="/classes" className="back-link">
-        ← Мої класи
+        {t("classes.back")}
       </Link>
 
       <div className="page-header">
@@ -253,11 +251,11 @@ export default function ClassPage() {
 
         {isTeacher ? (
           <button className="danger-button" onClick={deleteClass}>
-            Видалити клас
+            {t("classes.deleteClass")}
           </button>
         ) : (
           <button className="danger-button" onClick={leaveClass}>
-            Вийти з класу
+            {t("classes.leaveClass")}
           </button>
         )}
       </div>
@@ -265,18 +263,18 @@ export default function ClassPage() {
       {isTeacher && (
         <div className="panel join-code-card">
           <div>
-            <p className="muted">Код для вступу учнів</p>
+            <p className="muted">{t("classes.joinCode")}</p>
             <p className="join-code">{room.join_code}</p>
           </div>
           <button className="secondary-button" onClick={copyCode}>
-            {copied ? "Скопійовано ✓" : "Копіювати"}
+            {copied ? t("classes.copied") : t("classes.copy")}
           </button>
         </div>
       )}
 
       {/* ---------- Сети класу ---------- */}
       <section className="class-section">
-        <h2>Сети класу</h2>
+        <h2>{t("classes.setsTitle")}</h2>
 
         {isTeacher &&
           (availableSets.length > 0 ? (
@@ -286,7 +284,7 @@ export default function ClassPage() {
                 value={selectedSetId}
                 onChange={(e) => setSelectedSetId(e.target.value)}
               >
-                <option value="">Обери свій сет...</option>
+                <option value="">{t("classes.chooseSet")}</option>
                 {availableSets.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.title}
@@ -298,21 +296,21 @@ export default function ClassPage() {
                 onClick={assignSet}
                 disabled={!selectedSetId}
               >
-                Додати до класу
+                {t("classes.addToClass")}
               </button>
             </div>
           ) : (
             <p className="muted">
-              Усі твої сети вже в цьому класі.{" "}
-              <Link to="/sets/new">Створи новий сет</Link>
+              {t("classes.allSetsAdded")}{" "}
+              <Link to="/sets/new">{t("classes.createNewSet")}</Link>
             </p>
           ))}
 
         {classSets.length === 0 ? (
           <p className="muted">
             {isTeacher
-              ? "Додай сети, щоб учні могли їх вивчати."
-              : "Викладач ще не додав сетів до цього класу."}
+              ? t("classes.noSetsTeacher")
+              : t("classes.noSetsStudent")}
           </p>
         ) : (
           <div className="class-sets-list">
@@ -335,19 +333,21 @@ export default function ClassPage() {
                             checked={row.students_can_edit}
                             onChange={() => toggleEdit(row)}
                           />
-                          Учні можуть редагувати
+                          {t("classes.studentsCanEdit")}
                         </label>
                         <button
                           className="icon-button"
                           onClick={() => removeSet(row)}
-                          aria-label="Прибрати сет з класу"
+                          aria-label={t("classes.removeSet")}
                         >
                           ✕
                         </button>
                       </div>
                     ) : (
                       row.students_can_edit && (
-                        <span className="badge">Можна редагувати</span>
+                        <span className="badge">
+                          {t("classes.canEditBadge")}
+                        </span>
                       )
                     )}
                   </div>
@@ -360,23 +360,22 @@ export default function ClassPage() {
       {/* ---------- Учні (бачить лише викладач) ---------- */}
       {isTeacher && (
         <section className="class-section">
-          <h2>Учні</h2>
+          <h2>{t("classes.studentsTitle")}</h2>
 
           {members.length === 0 ? (
             <p className="muted">
-              Поки ніхто не вступив. Поділися з учнями кодом{" "}
-              <strong>{room.join_code}</strong>.
+              {t("classes.noStudents")} <strong>{room.join_code}</strong>
             </p>
           ) : (
             <div className="members-list">
               {members.map((m) => (
                 <div key={m.user_id} className="member-row">
-                  <span>{m.profiles?.username ?? "Учень"}</span>
+                  <span>{m.profiles?.username ?? t("classes.student")}</span>
                   <button
                     className="link-button danger-link"
                     onClick={() => removeMember(m)}
                   >
-                    Видалити
+                    {t("classes.remove")}
                   </button>
                 </div>
               ))}

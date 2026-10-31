@@ -1,11 +1,33 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import i18n from "../i18n";
 import type { GeneratedSet, Level } from "../types";
 
 interface GenerateParams {
   topic: string;
   level: Level;
   count: number;
+}
+
+// За кодом відповіді сервера обираємо повідомлення зі словника потрібною мовою
+function errorKeyByStatus(status: number): string | null {
+  switch (status) {
+    case 504:
+    case 546: // Supabase зупинив функцію через ліміт часу
+      return "timeout";
+    case 503:
+      return "overloaded";
+    case 429:
+      return "rateLimit";
+    case 502:
+      return "unavailable";
+    case 400:
+      return "badRequest";
+    case 500:
+      return "server";
+    default:
+      return null;
+  }
 }
 
 export async function generateSet(
@@ -18,21 +40,14 @@ export async function generateSet(
   if (error) {
     console.error("generateSet error:", error);
 
-    let message = "Не вдалося зв'язатися з сервером ШІ";
+    let message = i18n.t("aiErrors.network");
 
     if (error instanceof FunctionsHttpError) {
       const status = error.context.status;
-      const body = await error.context.json().catch(() => null);
-
-      if (status === 546) {
-        // Supabase зупинив функцію через ліміт часу
-        message =
-          "ШІ відповідав занадто довго. Спробуй ще раз або зменш кількість слів.";
-      } else {
-        // Наша функція повертає поле error, а сам Supabase — поле message
-        message =
-          body?.error ?? body?.message ?? `Помилка сервера (код ${status})`;
-      }
+      const key = errorKeyByStatus(status);
+      message = key
+        ? i18n.t(`aiErrors.${key}`)
+        : i18n.t("aiErrors.unknown", { status });
     }
 
     throw new Error(message);
