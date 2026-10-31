@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { validateCards } from "../lib/cards";
 import { useSetWithCards } from "../hooks/useSetWithCards";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import CardsEditor from "../components/CardsEditor";
 import SetNotFound from "../components/SetNotFound";
 import type { Card, CardDraft, StudySet } from "../types";
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export default function EditSetPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const { set, cards, loading, notFound } = useSetWithCards(id);
   const [canEdit, setCanEdit] = useState<boolean | null>(null);
-  useDocumentTitle(set ? `Редагування: ${set.title}` : undefined);
+  useDocumentTitle(set ? t("edit.pageTitle", { title: set.title }) : undefined);
+
   // Права перевіряє база: власник або учень класу з дозволом
   useEffect(() => {
     if (!set) return;
@@ -24,7 +27,7 @@ export default function EditSetPage() {
       .then(({ data }) => setCanEdit(Boolean(data)));
   }, [set]);
 
-  if (loading || (set && canEdit === null)) return <p>Завантаження...</p>;
+  if (loading || (set && canEdit === null)) return <p>{t("common.loading")}</p>;
   if (notFound || !set) return <SetNotFound />;
 
   if (!canEdit) {
@@ -43,6 +46,7 @@ interface EditSetFormProps {
 }
 
 function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [title, setTitle] = useState(set.title);
@@ -63,7 +67,7 @@ function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
     setError(null);
 
     if (isOwner && !title.trim()) {
-      setError("Введи назву сету");
+      setError(t("validation.noTitle"));
       return;
     }
 
@@ -119,7 +123,7 @@ function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
       navigate(`/sets/${set.id}`);
     } catch (err) {
       console.error(err);
-      setError("Не вдалося зберегти зміни");
+      setError(t("edit.saveFailed"));
       setSaving(false);
     }
   }
@@ -129,18 +133,13 @@ function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
       <Link to={`/sets/${set.id}`} className="back-link">
         ← {set.title}
       </Link>
-      <h1>Редагування сету</h1>
+      <h1>{t("edit.title")}</h1>
 
-      {!isOwner && (
-        <p className="notice">
-          Викладач дозволив редагувати картки цього сету. Назву й опис може
-          змінювати лише автор.
-        </p>
-      )}
+      {!isOwner && <p className="notice">{t("edit.studentNotice")}</p>}
 
       <form className="set-form" onSubmit={handleSubmit}>
         <label className="field">
-          Назва
+          {t("setForm.name")}
           <input
             className="input"
             value={title}
@@ -150,7 +149,7 @@ function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
         </label>
 
         <label className="field">
-          Опис (необов'язково)
+          {t("setForm.description")}
           <input
             className="input"
             value={description}
@@ -159,17 +158,17 @@ function EditSetForm({ set, cards, isOwner }: EditSetFormProps) {
           />
         </label>
 
-        <h2>Картки</h2>
+        <h2>{t("setForm.cards")}</h2>
         <CardsEditor cards={drafts} onChange={setDrafts} />
 
         {error && <p className="error">{error}</p>}
 
         <div className="form-actions">
           <Link to={`/sets/${set.id}`} className="secondary-button">
-            Скасувати
+            {t("edit.cancel")}
           </Link>
           <button type="submit" className="primary-button" disabled={saving}>
-            {saving ? "Збереження..." : "Зберегти зміни"}
+            {saving ? t("edit.saving") : t("edit.save")}
           </button>
         </div>
       </form>

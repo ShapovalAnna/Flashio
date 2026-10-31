@@ -1,20 +1,22 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { createEmptyCard, validateCards } from "../lib/cards";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import CardsEditor from "../components/CardsEditor";
 import AiGenerateForm from "../components/AiGenerateForm";
 import type { CardDraft, GeneratedSet } from "../types";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 type Mode = "choose" | "manual" | "ai";
 
 export default function CreateSetPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  useDocumentTitle("Новий сет");
+  useDocumentTitle(t("create.title"));
 
   // Якщо в адресі вказано спосіб (?mode=ai або ?mode=manual), одразу відкриваємо потрібний екран
   const [searchParams] = useSearchParams();
@@ -22,6 +24,7 @@ export default function CreateSetPage() {
   const [mode, setMode] = useState<Mode>(
     initialMode === "ai" || initialMode === "manual" ? initialMode : "choose",
   );
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cards, setCards] = useState<CardDraft[]>(() => [
@@ -54,7 +57,7 @@ export default function CreateSetPage() {
     setError(null);
 
     if (!title.trim()) {
-      setError("Введи назву сету");
+      setError(t("validation.noTitle"));
       return;
     }
 
@@ -78,7 +81,7 @@ export default function CreateSetPage() {
 
     if (insertSetError) {
       console.error(insertSetError);
-      setError("Не вдалося створити сет");
+      setError(t("create.createFailed"));
       setSaving(false);
       return;
     }
@@ -96,7 +99,7 @@ export default function CreateSetPage() {
 
     if (insertCardsError) {
       console.error(insertCardsError);
-      setError("Сет створено, але не вдалося зберегти картки");
+      setError(t("create.cardsFailed"));
       return;
     }
 
@@ -108,24 +111,22 @@ export default function CreateSetPage() {
     return (
       <div>
         <Link to="/sets" className="back-link">
-          ← Мої сети
+          {t("sets.backToSets")}
         </Link>
-        <h1>Новий сет</h1>
-        <p className="muted">Як ти хочеш створити сет?</p>
+        <h1>{t("create.title")}</h1>
+        <p className="muted">{t("create.how")}</p>
 
         <div className="choice-grid">
           <button className="choice-card" onClick={() => setMode("manual")}>
             <span className="choice-icon">✍️</span>
-            <strong>Вручну</strong>
-            <span className="muted">Самостійно додай слова і переклади</span>
+            <strong>{t("create.manual.title")}</strong>
+            <span className="muted">{t("create.manual.text")}</span>
           </button>
 
           <button className="choice-card" onClick={() => setMode("ai")}>
             <span className="choice-icon">✨</span>
-            <strong>За допомогою ШІ</strong>
-            <span className="muted">
-              Опиши тему, і ШІ підбере слова з перекладом
-            </span>
+            <strong>{t("create.ai.title")}</strong>
+            <span className="muted">{t("create.ai.text")}</span>
           </button>
         </div>
       </div>
@@ -141,14 +142,10 @@ export default function CreateSetPage() {
           className="back-link link-button"
           onClick={() => setMode("choose")}
         >
-          ← Назад
+          {t("sets.back")}
         </button>
-        <h1>Новий сет зі ШІ ✨</h1>
-        <p className="muted">
-          Опиши тему, і ШІ створить чернетку: англійське слово з одного боку,
-          український переклад з іншого. Перед збереженням ти зможеш усе
-          перевірити й виправити.
-        </p>
+        <h1>{t("create.aiTitle")}</h1>
+        <p className="muted">{t("create.aiIntro")}</p>
 
         <AiGenerateForm onGenerated={handleGenerated} />
       </div>
@@ -163,55 +160,56 @@ export default function CreateSetPage() {
         className="back-link link-button"
         onClick={() => setMode("choose")}
       >
-        ← Назад
+        {t("sets.back")}
       </button>
-      <h1>Новий сет</h1>
+      <h1>{t("create.title")}</h1>
 
       {fromAi && (
         <div className="notice ai-notice">
           <span>
-            ✨ ШІ підготував чернетку з {cards.length} слів. Перевір переклади,
-            виправ або видали зайве, а потім збережи сет.
+            {t("create.aiDraft", {
+              words: t("common.words", { count: cards.length }),
+            })}
           </span>
           <button
             type="button"
             className="link-button"
             onClick={() => setMode("ai")}
           >
-            Згенерувати ще раз
+            {t("create.regenerate")}
           </button>
         </div>
       )}
 
       <form className="set-form" onSubmit={handleSubmit}>
         <label className="field">
-          Назва
+          {t("setForm.name")}
           <input
             className="input"
-            placeholder="Наприклад: Подорожі, Unit 5"
+            placeholder={t("setForm.namePlaceholder")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </label>
 
         <label className="field">
-          Опис (необов'язково)
+          {t("setForm.description")}
           <input
             className="input"
-            placeholder="Про що цей сет"
+            placeholder={t("setForm.descriptionPlaceholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
 
-        <h2>Картки</h2>
+        <h2>{t("setForm.cards")}</h2>
         <CardsEditor cards={cards} onChange={setCards} />
 
         {error && <p className="error">{error}</p>}
 
         <div className="form-actions">
           <button type="submit" className="primary-button" disabled={saving}>
-            {saving ? "Збереження..." : "Створити сет"}
+            {saving ? t("create.saving") : t("create.submit")}
           </button>
         </div>
       </form>

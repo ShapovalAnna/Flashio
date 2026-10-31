@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { CardDraft } from "../types";
 import { createEmptyCard } from "../lib/cards";
 
@@ -7,6 +8,8 @@ interface CardsEditorProps {
 }
 
 export default function CardsEditor({ cards, onChange }: CardsEditorProps) {
+  const { t } = useTranslation();
+
   function updateCard(
     key: string,
     field: "term" | "definition",
@@ -34,13 +37,13 @@ export default function CardsEditor({ cards, onChange }: CardsEditorProps) {
           <span className="card-number">{index + 1}</span>
           <input
             className="input"
-            placeholder="Слово (англійською)"
+            placeholder={t("editor.termPlaceholder")}
             value={card.term}
             onChange={(e) => updateCard(card.key, "term", e.target.value)}
           />
           <input
             className="input"
-            placeholder="Переклад (українською)"
+            placeholder={t("editor.definitionPlaceholder")}
             value={card.definition}
             onChange={(e) => updateCard(card.key, "definition", e.target.value)}
           />
@@ -49,7 +52,7 @@ export default function CardsEditor({ cards, onChange }: CardsEditorProps) {
             className="icon-button"
             onClick={() => removeCard(card.key)}
             disabled={cards.length <= 1}
-            aria-label="Видалити картку"
+            aria-label={t("editor.removeCard")}
           >
             ✕
           </button>
@@ -57,7 +60,7 @@ export default function CardsEditor({ cards, onChange }: CardsEditorProps) {
       ))}
 
       <button type="button" className="secondary-button" onClick={addCard}>
-        + Додати картку
+        {t("editor.addCard")}
       </button>
     </div>
   );

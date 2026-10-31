@@ -1,23 +1,22 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { generateSet } from "../services/ai";
 import type { GeneratedSet, Level } from "../types";
 
 const LEVELS: Level[] = ["A1", "A2", "B1", "B2", "C1"];
 const COUNTS = [10, 15, 20, 25, 30];
 
-const EXAMPLES = [
-  "Подорожі та аеропорт",
-  "Емоції та почуття",
-  "Фразові дієслова з get",
-  "Лексика для співбесіди",
-];
+// Ключі прикладів тем у словнику aiForm.examples
+const EXAMPLES = ["travel", "emotions", "phrasal", "interview"];
 
 interface AiGenerateFormProps {
   onGenerated: (result: GeneratedSet) => void;
 }
 
 export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
+  const { t } = useTranslation();
+
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState<Level>("B1");
   const [count, setCount] = useState(15);
@@ -29,7 +28,7 @@ export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
     setError(null);
 
     if (!topic.trim()) {
-      setError("Опиши, які слова потрібні");
+      setError(t("aiForm.empty"));
       return;
     }
 
@@ -38,7 +37,7 @@ export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
       const result = await generateSet({ topic: topic.trim(), level, count });
       onGenerated(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Сталася помилка");
+      setError(err instanceof Error ? err.message : t("aiForm.unknownError"));
     } finally {
       setLoading(false);
     }
@@ -47,33 +46,36 @@ export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
   return (
     <form className="set-form ai-form" onSubmit={handleSubmit}>
       <label className="field">
-        Які слова тобі потрібні?
+        {t("aiForm.question")}
         <textarea
           className="input"
           rows={3}
           maxLength={300}
-          placeholder="Наприклад: слова на тему подорожей літаком"
+          placeholder={t("aiForm.placeholder")}
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
         />
       </label>
 
       <div className="examples">
-        {EXAMPLES.map((example) => (
-          <button
-            key={example}
-            type="button"
-            className="example-chip"
-            onClick={() => setTopic(example)}
-          >
-            {example}
-          </button>
-        ))}
+        {EXAMPLES.map((key) => {
+          const example = t(`aiForm.examples.${key}`);
+          return (
+            <button
+              key={key}
+              type="button"
+              className="example-chip"
+              onClick={() => setTopic(example)}
+            >
+              {example}
+            </button>
+          );
+        })}
       </div>
 
       <div className="ai-options">
         <label className="field">
-          Рівень
+          {t("aiForm.level")}
           <select
             className="input"
             value={level}
@@ -88,7 +90,7 @@ export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
         </label>
 
         <label className="field">
-          Кількість слів
+          {t("aiForm.count")}
           <select
             className="input"
             value={count}
@@ -107,11 +109,11 @@ export default function AiGenerateForm({ onGenerated }: AiGenerateFormProps) {
 
       <div className="form-actions">
         <button type="submit" className="primary-button" disabled={loading}>
-          {loading ? "✨ Генерую..." : "✨ Згенерувати"}
+          {loading ? t("aiForm.generating") : t("aiForm.generate")}
         </button>
       </div>
 
-      {loading && <p className="muted">Зазвичай це займає кілька секунд.</p>}
+      {loading && <p className="muted">{t("aiForm.wait")}</p>}
     </form>
   );
 }

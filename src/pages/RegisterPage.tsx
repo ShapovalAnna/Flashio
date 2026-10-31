@@ -1,14 +1,17 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
-import type { Role } from "../types";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import type { Role } from "../types";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  useDocumentTitle(t("auth.registerTitle"));
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,7 +19,6 @@ export default function RegisterPage() {
   const [role, setRole] = useState<Role>("student");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  useDocumentTitle("Реєстрація");
 
   if (user) {
     return <Navigate to="/sets" replace />;
@@ -27,12 +29,12 @@ export default function RegisterPage() {
     setError(null);
 
     if (password.length < 6) {
-      setError("Пароль має містити щонайменше 6 символів");
+      setError(t("auth.errors.shortPassword"));
       return;
     }
 
     setSubmitting(true);
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -46,16 +48,21 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!data.session) {
+      setError(t("auth.errors.confirmEmail"));
+      return;
+    }
+
     navigate("/sets");
   }
 
   return (
     <div className="form-card">
-      <h1>Реєстрація</h1>
+      <h1>{t("auth.registerTitle")}</h1>
 
       <form className="form" onSubmit={handleSubmit}>
         <label>
-          Ім'я користувача
+          {t("auth.username")}
           <input
             type="text"
             value={username}
@@ -65,7 +72,7 @@ export default function RegisterPage() {
         </label>
 
         <label>
-          Email
+          {t("auth.email")}
           <input
             type="email"
             value={email}
@@ -75,7 +82,7 @@ export default function RegisterPage() {
         </label>
 
         <label>
-          Пароль
+          {t("auth.password")}
           <input
             type="password"
             value={password}
@@ -85,7 +92,7 @@ export default function RegisterPage() {
         </label>
 
         <fieldset className="radio-group">
-          <legend>Я реєструюся як</legend>
+          <legend>{t("auth.roleLegend")}</legend>
           <label>
             <input
               type="radio"
@@ -93,7 +100,7 @@ export default function RegisterPage() {
               checked={role === "student"}
               onChange={() => setRole("student")}
             />
-            Учень
+            {t("auth.student")}
           </label>
           <label>
             <input
@@ -102,19 +109,19 @@ export default function RegisterPage() {
               checked={role === "teacher"}
               onChange={() => setRole("teacher")}
             />
-            Викладач
+            {t("auth.teacher")}
           </label>
         </fieldset>
 
         {error && <p className="error">{error}</p>}
 
         <button type="submit" disabled={submitting}>
-          {submitting ? "Створення акаунта..." : "Зареєструватися"}
+          {submitting ? t("auth.registering") : t("auth.registerButton")}
         </button>
       </form>
 
       <p>
-        Вже маєш акаунт? <Link to="/login">Увійти</Link>
+        {t("auth.haveAccount")} <Link to="/login">{t("auth.loginButton")}</Link>
       </p>
     </div>
   );

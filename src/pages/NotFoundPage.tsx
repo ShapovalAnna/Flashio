@@ -1,13 +1,16 @@
 import { Link } from "react-router";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useTranslation } from "react-i18next";
 
-export default function NotFoundPage() {
-  useDocumentTitle("Сторінку не знайдено");
+export default function SetNotFound() {
+  const { t } = useTranslation();
 
   return (
     <div>
-      <h1>Сторінку не знайдено</h1>
-      <Link to="/">Повернутися на головну</Link>
+      <h1>{t("sets.notFoundTitle")}</h1>
+      <p className="muted">{t("sets.notFoundText")}</p>
+      <Link to="/sets" className="back-link">
+        {t("sets.backToSets")}
+      </Link>
     </div>
   );
 }

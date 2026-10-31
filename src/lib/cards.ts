@@ -1,19 +1,20 @@
 import type { CardDraft } from "../types";
+import i18n from "../i18n";
 
 export function createEmptyCard(): CardDraft {
   return { key: crypto.randomUUID(), term: "", definition: "" };
 }
 
-// Правильне закінчення: 1 картка, 2 картки, 5 карток
+// 1 картка / 2 картки / 5 карток, або 1 card / 5 cards — залежно від мови
 export function cardsCountLabel(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-
-  if (mod10 === 1 && mod100 !== 11) return `${n} картка`;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
-    return `${n} картки`;
-  return `${n} карток`;
+  return i18n.t("common.cards", { count: n });
 }
+
+// 1 учень / 2 учні / 5 учнів, або 1 student / 5 students
+export function studentsCountLabel(n: number): string {
+  return i18n.t("common.students", { count: n });
+}
+
 export interface ValidCard {
   id?: string;
   term: string;
@@ -26,21 +27,18 @@ export function validateCards(drafts: CardDraft[]): {
   error: string | null;
 } {
   const cards = drafts
-    .map((draft) => ({
-      id: draft.id,
-      term: draft.term.trim(),
-      definition: draft.definition.trim(),
-    }))
-    .filter((card) => card.term || card.definition);
+      .map((draft) => ({
+        id: draft.id,
+        term: draft.term.trim(),
+        definition: draft.definition.trim(),
+      }))
+      .filter((card) => card.term || card.definition);
 
   if (cards.some((card) => !card.term || !card.definition)) {
-    return {
-      cards,
-      error: "У кожної картки мають бути заповнені обидві сторони",
-    };
+    return { cards, error: i18n.t("validation.bothSides") };
   }
   if (cards.length < 2) {
-    return { cards, error: "Додай щонайменше 2 картки" };
+    return { cards, error: i18n.t("validation.minCards") };
   }
   return { cards, error: null };
 }
@@ -53,13 +51,4 @@ export function shuffle<T>(items: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
-}
-// 1 учень, 2 учні, 5 учнів
-export function studentsCountLabel(n: number): string {
-  const mod10 = n % 10
-  const mod100 = n % 100
-
-  if (mod10 === 1 && mod100 !== 11) return `${n} учень`
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} учні`
-  return `${n} учнів`
 }

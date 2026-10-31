@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel } from "../lib/cards";
 import { useSetWithCards } from "../hooks/useSetWithCards";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import SetNotFound from "../components/SetNotFound";
 import SpeakButton from "../components/SpeakButton";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
-
 
 export default function SetPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,21 +28,19 @@ export default function SetPage() {
 
   async function handleDelete() {
     if (!set) return;
-    if (
-      !window.confirm(`Видалити сет «${set.title}»? Цю дію не можна скасувати.`)
-    )
+    if (!window.confirm(t("setPage.confirmDelete", { title: set.title })))
       return;
 
     const { error } = await supabase.from("sets").delete().eq("id", set.id);
     if (error) {
       console.error(error);
-      alert("Не вдалося видалити сет");
+      alert(t("setPage.deleteFailed"));
       return;
     }
     navigate("/sets");
   }
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>{t("common.loading")}</p>;
   if (notFound || !set) return <SetNotFound />;
 
   const isOwner = user?.id === set.owner_id;
@@ -49,7 +48,7 @@ export default function SetPage() {
   return (
     <div>
       <Link to={isOwner ? "/sets" : "/classes"} className="back-link">
-        {isOwner ? "← Мої сети" : "← Мої класи"}
+        {isOwner ? t("sets.backToSets") : t("sets.backToClasses")}
       </Link>
 
       <div className="page-header">
@@ -63,12 +62,12 @@ export default function SetPage() {
           <div className="header-actions">
             {canEdit && (
               <Link to={`/sets/${set.id}/edit`} className="secondary-button">
-                Редагувати
+                {t("setPage.edit")}
               </Link>
             )}
             {isOwner && (
               <button className="danger-button" onClick={handleDelete}>
-                Видалити
+                {t("setPage.delete")}
               </button>
             )}
           </div>
@@ -78,18 +77,18 @@ export default function SetPage() {
       <div className="study-modes">
         <Link to={`/sets/${set.id}/study`} className="mode-tile">
           <span className="choice-icon">🃏</span>
-          <strong>Картки</strong>
-          <span className="muted">Перегортай і запам'ятовуй</span>
+          <strong>{t("setPage.flashcards.title")}</strong>
+          <span className="muted">{t("setPage.flashcards.text")}</span>
         </Link>
 
         <Link to={`/sets/${set.id}/quiz`} className="mode-tile">
           <span className="choice-icon">📝</span>
-          <strong>Тест</strong>
-          <span className="muted">Обери правильний переклад</span>
+          <strong>{t("setPage.quiz.title")}</strong>
+          <span className="muted">{t("setPage.quiz.text")}</span>
         </Link>
       </div>
 
-      <h2>Слова в сеті</h2>
+      <h2>{t("setPage.words")}</h2>
       <div className="cards-list">
         {cards.map((card) => (
           <div key={card.id} className="card-item">

@@ -1378,3 +1378,36 @@ input[type='radio'] {
     padding: 16px;
   }
 }
+/* ---------- Перемикач мови ---------- */
+
+.lang-switcher {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.lang-switcher button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--lavender);
+  cursor: pointer;
+}
+
+.lang-switcher button.active {
+  background: var(--mint);
+  color: var(--navy);
+}
+
+@media (max-width: 760px) {
+  .header nav .lang-switcher {
+    align-self: flex-start;
+    margin: 12px 0 4px;
+  }
+}

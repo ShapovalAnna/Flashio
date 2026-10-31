@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/authContext";
 import { cardsCountLabel } from "../lib/cards";
-import type { StudySet } from "../types";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import type { StudySet } from "../types";
 
 interface SetWithCount extends StudySet {
   cards: { count: number }[];
 }
 
 export default function MySetsPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id;
+  useDocumentTitle(t("sets.title"));
 
   const [sets, setSets] = useState<SetWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-    useDocumentTitle("Мої сети");
 
   useEffect(() => {
     if (!userId) return;
@@ -30,7 +32,7 @@ export default function MySetsPage() {
       .then(({ data, error: loadError }) => {
         if (loadError) {
           console.error(loadError);
-          setError("Не вдалося завантажити сети");
+          setError("load");
         } else {
           setSets(data ?? []);
         }
@@ -41,19 +43,19 @@ export default function MySetsPage() {
   return (
     <div>
       <div className="page-header">
-        <h1>Мої сети</h1>
+        <h1>{t("sets.title")}</h1>
         <Link to="/sets/new" className="primary-button">
-          + Новий сет
+          {t("sets.newSet")}
         </Link>
       </div>
 
-      {loading && <p>Завантаження...</p>}
-      {error && <p className="error">{error}</p>}
+      {loading && <p>{t("common.loading")}</p>}
+      {error && <p className="error">{t("sets.loadError")}</p>}
 
       {!loading && !error && sets.length === 0 && (
         <div className="empty-state">
-          <h2>У тебе ще немає сетів</h2>
-          <p className="muted">Створи перший сет і почни вивчати слова.</p>
+          <h2>{t("sets.emptyTitle")}</h2>
+          <p className="muted">{t("sets.emptyText")}</p>
         </div>
       )}
 
